@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework.exceptions import APIException, NotFound
+from django.shortcuts import get_object_or_404
 from .models import Book
 from .serializers import BookSerializer
 
@@ -64,4 +65,34 @@ class BookView(ViewSet):
 
     
     def update(self, request, pk=None):
-        pass
+        try:
+
+            old_book_data = Book.objects.get(id=pk)
+       
+            serializer = BookSerializer(old_book_data, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    "status": "success",
+                    "data": serializer.data
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    "status": "error",
+                    "data": serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exc:
+            raise APIException(str(exc))
+
+    def destroy(self, request, pk=None):
+        try:
+            book_data = get_object_or_404(Book, id=pk)
+            book_data.delete()
+
+            return Response({
+                "status": "success",
+                "data": "Record deleted."
+            })
+
+        except Exception as exc:
+            raise APIException(str(exc))
